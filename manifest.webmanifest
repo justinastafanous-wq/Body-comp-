@@ -1,0 +1,10 @@
+{
+  "name": "CalCurve",
+  "short_name": "CalCurve",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0b0f10",
+  "theme_color": "#0b0f10",
+  "description": "Weight projections + diet guide in a dark, gym-friendly UI.",
+  "icons": []
+}
