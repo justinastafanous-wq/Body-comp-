@@ -7,9 +7,5 @@
   "theme_color": "#0b0f10",
   "description": "Weight projections + diet guide in a dark, gym-friendly UI.",
   "icons": [
-  {
-    "src": "./4259E36F-E299-4BE9-ADB4-5F0A78473B78.png",
-    "sizes": "512x512",
-    "type": "image/png"
-  }
+  { "src": "./calcurve-icon.png", "sizes": "1024x1024", "type": "image/png" }
 ]
