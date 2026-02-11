@@ -33,7 +33,7 @@
       padding: 18px;
     }
 
-    .wrap{ max-width: 940px; margin:0 auto; }
+    .wrap{ max-width: 980px; margin:0 auto; }
     .hero{
       border:1px solid var(--border);
       border-radius: 18px;
@@ -52,7 +52,7 @@
       transform: rotate(12deg);
     }
     h1{ margin:0; font-size: 20px; letter-spacing:.2px; }
-    .subtitle{ margin-top: 6px; font-size: 12px; color: var(--muted); line-height:1.35; max-width: 62ch; }
+    .subtitle{ margin-top: 6px; font-size: 12px; color: var(--muted); line-height:1.35; max-width: 70ch; }
     .bigline{
       margin-top: 10px;
       display:flex;
@@ -81,7 +81,7 @@
       backdrop-filter: blur(6px);
     }
     .grid{ display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    @media (max-width: 720px){ .grid{ grid-template-columns: 1fr; } }
+    @media (max-width: 760px){ .grid{ grid-template-columns: 1fr; } }
 
     label{ display:block; font-size: 12px; color: var(--muted); margin: 0 0 6px; }
     input, select{
@@ -121,6 +121,12 @@
       background: rgba(255,255,255,.75);
       border:1px solid var(--border);
       font-weight: 700;
+    }
+    .ghost{
+      color: var(--text);
+      background: rgba(255,255,255,.55);
+      border:1px solid rgba(9,72,71,.10);
+      font-weight: 800;
     }
 
     .tiny{ font-size: 11px; color: var(--muted); margin-top: 6px; line-height:1.35; }
@@ -183,8 +189,35 @@
     table{ width:100%; border-collapse: collapse; margin-top: 10px; overflow:hidden; border-radius: 16px; }
     th, td{ text-align:left; padding: 10px; border-bottom: 1px solid rgba(9,72,71,.10); font-size: 14px; }
     th{ font-size: 12px; color: var(--muted); }
+    tr:last-child td{ border-bottom: none; }
 
     .hr{ height:1px; background: rgba(9,72,71,.12); margin: 10px 0; border-radius: 999px; }
+
+    .miniCard{
+      border:1px solid rgba(9,72,71,.12);
+      background: rgba(255,255,255,.60);
+      border-radius: 16px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .checklist{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+    @media (max-width: 760px){ .checklist{ grid-template-columns: 1fr; } }
+    .checkItem{
+      display:flex; gap:10px; align-items:flex-start;
+      border:1px solid rgba(9,72,71,.10);
+      background: rgba(255,255,255,.60);
+      border-radius: 14px;
+      padding: 10px 10px;
+      font-size: 13px;
+      color: rgba(11,31,30,.92);
+    }
+    .checkItem input{ width:18px; height:18px; margin-top:2px; }
+    .checkItem .meta{ color: var(--muted); font-size: 12px; margin-top: 2px; line-height:1.25; }
   </style>
 </head>
 
@@ -193,13 +226,13 @@
     <div class="hero">
       <h1>Body Projection</h1>
       <div class="subtitle">
-        Quick, realistic-ish weight projections based on your inputs. The scale can swing early from water/glycogen—use this for direction, not perfection.
+        Projections are estimates. Scale weight can swing from water/glycogen—use this for direction and motivation, not perfection.
       </div>
       <div class="bigline">
         <div class="chip">Mode: <b id="heroMode">Daily Deficit</b></div>
         <div class="chip">Horizon: <b id="heroHorizon">56 days</b></div>
         <div class="chip">Adherence: <b id="heroAdh">100%</b></div>
-        <div class="chip">Projected: <b id="heroMsg">—</b></div>
+        <div class="chip">Projected end: <b id="heroMsg">—</b></div>
       </div>
     </div>
 
@@ -213,7 +246,7 @@
             <option value="date">Target Date (goal weight by date)</option>
             <option value="goaleta">Goal Weight ETA (when will I hit it?)</option>
           </select>
-          <div class="tiny">Switch modes anytime—your other inputs stay the same.</div>
+          <div class="tiny">Goal modes use your Goal Weight (and Date) to compute either required deficit or ETA.</div>
         </div>
 
         <div>
@@ -275,7 +308,7 @@
         <div>
           <label>Adherence</label>
           <input id="adherence" type="range" min="70" max="100" value="100" />
-          <div class="tiny">Assumes you hit your plan <b id="adhLabel">100%</b> of the time (realistic slider).</div>
+          <div class="tiny">Assumes you hit your plan <b id="adhLabel">100%</b> of the time.</div>
         </div>
 
         <div>
@@ -292,13 +325,31 @@
         </div>
 
         <div>
+          <label>Maintenance / Refeed days</label>
+          <select id="maintDays">
+            <option value="0" selected>0 days/week (straight cut)</option>
+            <option value="1">1 day/week (maintenance)</option>
+            <option value="2">2 days/week (maintenance)</option>
+          </select>
+          <div class="tiny">These days assume ~0 deficit (maintenance), which slows weekly loss a bit but helps adherence.</div>
+        </div>
+
+        <div>
+          <label>Maintenance days occur on</label>
+          <select id="maintPattern">
+            <option value="weekend" selected>Weekend (Sat/Sun first)</option>
+            <option value="even">Evenly spaced</option>
+          </select>
+          <div class="tiny">Weekend is the most common schedule.</div>
+        </div>
+
+        <div>
           <label>Adaptation (optional)</label>
           <select id="adapt">
             <option value="0" selected>None (simple)</option>
             <option value="0.10">Mild (10% slower over time)</option>
             <option value="0.20">Moderate (20% slower over time)</option>
           </select>
-          <div class="tiny">Gradually reduces “effective deficit” over the horizon.</div>
         </div>
 
         <div>
@@ -320,7 +371,7 @@
         <div id="caloriesBox" style="display:none;">
           <label>Target calories (intake)</label>
           <input id="intake" type="number" inputmode="numeric" min="800" max="6000" value="2000" />
-          <div class="tiny">We’ll compute deficit = TDEE − intake.</div>
+          <div class="tiny">We compute deficit = TDEE − intake (capped at 0).</div>
         </div>
 
         <div id="goalBox" style="display:none;">
@@ -332,17 +383,19 @@
         <div id="dateBox" style="display:none;">
           <label>Goal date</label>
           <input id="goalDate" type="date" />
-          <div class="tiny">We’ll compute the daily deficit needed to hit your goal weight by this date.</div>
+          <div class="tiny">Target Date mode computes the required deficit to hit the goal by the date.</div>
         </div>
       </div>
 
       <div class="btnrow">
         <button class="primary" id="calc" type="button">Calculate</button>
+        <button class="ghost" id="logToday" type="button">Log today</button>
+        <button class="ghost" id="share" type="button">Share</button>
         <button class="secondary" id="reset" type="button">Reset</button>
       </div>
 
       <div class="muted" style="margin-top:10px;">
-        Uses Mifflin–St Jeor for BMR + activity multiplier for TDEE. Projections are estimates, not a guarantee.
+        BMR: Mifflin–St Jeor. TDEE: activity multiplier. Not medical advice.
       </div>
     </div>
 
@@ -361,7 +414,7 @@
         <div class="pill">
           <div class="k">Effective deficit</div>
           <div class="v" id="effDef">—</div>
-          <div class="tiny">kcal/day after adherence</div>
+          <div class="tiny">kcal/day after adherence + maintenance days</div>
         </div>
         <div class="pill">
           <div class="k">Expected rate</div>
@@ -370,12 +423,13 @@
         </div>
       </div>
 
+      <div id="checkpointBox" class="miniCard" style="display:none;"></div>
       <div id="notices"></div>
 
       <div class="hr"></div>
 
       <canvas id="chart" width="980" height="380"></canvas>
-      <div class="tiny" style="margin-top:6px;">Chart is projected scale weight by week.</div>
+      <div class="tiny" style="margin-top:6px;">Chart is projected scale weight by week. (If goal mode is on, the goal line is shown.)</div>
 
       <table>
         <thead>
@@ -387,6 +441,41 @@
         </thead>
         <tbody id="tbody"></tbody>
       </table>
+
+      <div class="miniCard">
+        <div style="font-weight:900; letter-spacing:.2px;">Logs (your real weigh-ins)</div>
+        <div class="tiny">Tap “Log today” to save your current weight. Logs are stored on your phone (local storage).</div>
+        <div id="logsView" class="tiny" style="margin-top:8px;">No logs yet.</div>
+        <div class="btnrow" style="margin-top:10px;">
+          <button class="secondary" id="clearLogs" type="button">Clear logs</button>
+        </div>
+      </div>
+
+      <div class="miniCard">
+        <div style="font-weight:900; letter-spacing:.2px;">Diet checklist (optional)</div>
+        <div class="tiny">This is a planning checklist—not medical advice. If you have conditions/meds, run diet changes by a clinician.</div>
+
+        <div class="grid" style="margin-top:8px;">
+          <div>
+            <label>Preset</label>
+            <select id="dietPreset">
+              <option value="none" selected>None</option>
+              <option value="lowfodmap">Low FODMAP (starter)</option>
+              <option value="diabetes">Diabetes-friendly basics</option>
+              <option value="heart">Heart-healthy basics</option>
+            </select>
+          </div>
+          <div>
+            <label>Show checklist</label>
+            <select id="dietShow">
+              <option value="yes" selected>Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="dietChecklist" class="checklist"></div>
+      </div>
     </div>
   </div>
 
@@ -395,6 +484,8 @@
   const $ = (id) => document.getElementById(id);
 
   function round(n, d=0){ const p=Math.pow(10,d); return Math.round(n*p)/p; }
+  function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
   function lbToKg(lb){ return lb * 0.45359237; }
   function kgToLb(kg){ return kg / 0.45359237; }
   function inToCm(inches){ return inches * 2.54; }
@@ -413,12 +504,14 @@
     return `${y}-${m}-${da}`;
   }
 
+  // ---------- UI helpers ----------
   function setModeUI(){
     const mode = $("mode").value;
     $("deficitBox").style.display = (mode==="deficit") ? "" : "none";
     $("caloriesBox").style.display = (mode==="calories") ? "" : "none";
     $("goalBox").style.display = (mode==="date" || mode==="goaleta") ? "" : "none";
     $("dateBox").style.display = (mode==="date") ? "" : "none";
+
     $("heroMode").textContent =
       mode==="deficit" ? "Daily Deficit" :
       mode==="calories" ? "Target Calories" :
@@ -446,16 +539,29 @@
     $("heroAdh").textContent = `${a}%`;
   }
 
+  // ---------- Storage ----------
+  const STORE_KEY = "bp_app_v3";
+  function loadStore(){
+    try{ return JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); }catch(e){ return {}; }
+  }
+  function saveStore(obj){
+    localStorage.setItem(STORE_KEY, JSON.stringify(obj));
+  }
+
   function getInputs(){
     const units = $("units").value;
     const sex = $("sex").value;
     const age = Number($("age").value);
     const activity = Number($("activity").value);
     const mode = $("mode").value;
+
     const days = Number($("days").value);
     const adapt = Number($("adapt").value);
     const kcalPerLb = Number($("kcalPerLb").value);
     const adherence = Number($("adherence").value) / 100;
+
+    const maintDays = Number($("maintDays").value);
+    const maintPattern = $("maintPattern").value;
 
     let cm, kg;
     if(units === "imperial"){
@@ -472,10 +578,12 @@
 
     const deficit = Number($("deficit").value);
     const intake = Number($("intake").value);
+
     const goalWeight = Number($("goalWeight").value);
     const goalDate = $("goalDate").value;
 
-    return { units, sex, age, activity, mode, days, adapt, kcalPerLb, adherence, cm, kg, deficit, intake, goalWeight, goalDate };
+    return { units, sex, age, activity, mode, days, adapt, kcalPerLb, adherence, maintDays, maintPattern,
+             cm, kg, deficit, intake, goalWeight, goalDate };
   }
 
   function validate(x){
@@ -485,8 +593,8 @@
     if(!Number.isFinite(x.kg) || x.kg < 30 || x.kg > 300) errs.push("Weight looks off.");
     if(!Number.isFinite(x.activity) || x.activity < 1.1 || x.activity > 2.2) errs.push("Activity looks off.");
     if(!Number.isFinite(x.days) || x.days < 7 || x.days > 365) errs.push("Horizon looks off.");
-    if(x.mode==="deficit" && (!Number.isFinite(x.deficit) || x.deficit < 0 || x.deficit > 2000)) errs.push("Deficit looks off.");
-    if(x.mode==="calories" && (!Number.isFinite(x.intake) || x.intake < 800 || x.intake > 6000)) errs.push("Intake looks off.");
+    if(x.mode==="deficit" && (!Number.isFinite(x.deficit) || x.deficit < 0 || x.deficit > 3000)) errs.push("Deficit looks off.");
+    if(x.mode==="calories" && (!Number.isFinite(x.intake) || x.intake < 800 || x.intake > 8000)) errs.push("Intake looks off.");
     if((x.mode==="date" || x.mode==="goaleta")){
       if(!Number.isFinite(x.goalWeight)) errs.push("Goal weight looks off.");
       if(x.units==="imperial" && (x.goalWeight < 40 || x.goalWeight > 600)) errs.push("Goal weight looks off.");
@@ -514,112 +622,53 @@
     }
   }
 
-  function projectDailyWeightsKg({startKg, effDef, days, adapt, kcalPerLb}){
+  // ---------- Maintenance day scheduling ----------
+  function makeMaintenanceSet(maintDays, pattern){
+    // returns Set of day-of-week indices (0=Sun..6=Sat) for maintenance
+    // Weekend: Sat/Sun first. Even: spaced.
+    const set = new Set();
+    if(maintDays <= 0) return set;
+    if(pattern === "weekend"){
+      // Prefer Sat & Sun
+      if(maintDays >= 1) set.add(6); // Sat
+      if(maintDays >= 2) set.add(0); // Sun
+      return set;
+    }
+    // Evenly spaced: 1 day -> midweek (Wed). 2 days -> Wed + Sun.
+    if(maintDays === 1) { set.add(3); return set; } // Wed
+    if(maintDays === 2) { set.add(3); set.add(0); return set; }
+    return set;
+  }
+
+  // ---------- Projection ----------
+  function projectDailyWeightsKg({startKg, baseDef, adherence, days, adapt, kcalPerLb, maintDays, maintPattern}){
     const arr = [];
     let kg = startKg;
     arr.push(kg);
 
-    for(let d=1; d<=days; d++){
-      const progress = d / days;           // 0..1
-      const eff = 1 - (adapt * progress);  // 1 -> (1-adapt)
-      const dayDef = effDef * eff;
+    const maintSet = makeMaintenanceSet(maintDays, maintPattern);
 
-      const lbChange = (dayDef / kcalPerLb); // lb/day
+    const startDate = new Date(); // today
+    for(let d=1; d<=days; d++){
+      const progress = d / days;            // 0..1
+      const adaptFactor = 1 - (adapt * progress); // 1 -> (1-adapt)
+
+      const date = new Date(startDate.getTime());
+      date.setDate(startDate.getDate() + (d-1));
+      const dow = date.getDay(); // 0..6
+
+      // If maintenance day, deficit is 0
+      const dayDef = maintSet.has(dow) ? 0 : baseDef;
+
+      // Apply adherence + adaptation
+      const effDef = dayDef * adherence * adaptFactor;
+
+      const lbChange = (effDef / kcalPerLb); // lb/day
       const kgChange = lbToKg(lbChange);
       kg = Math.max(0, kg - kgChange);
       arr.push(kg);
     }
     return arr;
-  }
-
-  function drawChart(weightsKgByDay, units, goalLine){
-    const c = $("chart");
-    const ctx = c.getContext("2d");
-    const W = c.width, H = c.height;
-    ctx.clearRect(0,0,W,H);
-
-    const padL=54, padR=18, padT=18, padB=44;
-
-    // sample weekly points to keep it clean
-    const pts = [];
-    for(let i=0;i<weightsKgByDay.length;i+=7) pts.push(weightsKgByDay[i]);
-    if(pts[pts.length-1] !== weightsKgByDay[weightsKgByDay.length-1]) pts.push(weightsKgByDay[weightsKgByDay.length-1]);
-
-    const vals = pts.map(kg => units==="imperial" ? kgToLb(kg) : kg);
-    const min = Math.min(...vals), max = Math.max(...vals);
-    const span = Math.max(1e-9, max - min);
-    const yMin = min - span*0.12;
-    const yMax = max + span*0.12;
-
-    // soft grid
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "rgba(9,72,71,.10)";
-    ctx.fillStyle = "rgba(11,31,30,.55)";
-    ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial";
-
-    const ticks = 5;
-    for(let i=0;i<=ticks;i++){
-      const t=i/ticks;
-      const y = padT + (H-padT-padB)*(1-t);
-      ctx.beginPath();
-      ctx.moveTo(padL, y);
-      ctx.lineTo(W-padR, y);
-      ctx.stroke();
-
-      const val = yMin + (yMax-yMin)*t;
-      const label = round(val, units==="imperial" ? 0 : 1);
-      ctx.fillText(String(label), 10, y+4);
-    }
-
-    // goal line (optional)
-    if(goalLine != null){
-      const gy = padT + (H-padT-padB)*(1 - ((goalLine-yMin)/(yMax-yMin)));
-      ctx.setLineDash([6,6]);
-      ctx.strokeStyle = "rgba(34,197,94,.65)";
-      ctx.beginPath();
-      ctx.moveTo(padL, gy);
-      ctx.lineTo(W-padR, gy);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.fillStyle = "rgba(34,197,94,.85)";
-      ctx.fillText("Goal", padL+6, gy-6);
-    }
-
-    // line gradient
-    const grad = ctx.createLinearGradient(padL, padT, W-padR, H-padB);
-    grad.addColorStop(0, "rgba(14,165,164,.95)");
-    grad.addColorStop(1, "rgba(34,197,94,.95)");
-
-    // plot
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = grad;
-    ctx.beginPath();
-    for(let i=0;i<vals.length;i++){
-      const x = padL + (W-padL-padR) * (i/(vals.length-1));
-      const y = padT + (H-padT-padB) * (1 - ((vals[i]-yMin)/(yMax-yMin)));
-      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-    }
-    ctx.stroke();
-
-    // dots
-    ctx.fillStyle = "rgba(14,165,164,.95)";
-    for(let i=0;i<vals.length;i++){
-      const x = padL + (W-padL-padR) * (i/(vals.length-1));
-      const y = padT + (H-padT-padB) * (1 - ((vals[i]-yMin)/(yMax-yMin)));
-      ctx.beginPath(); ctx.arc(x,y,3.6,0,Math.PI*2); ctx.fill();
-    }
-
-    // x labels
-    ctx.fillStyle = "rgba(11,31,30,.55)";
-    const step = Math.max(1, Math.round((vals.length-1)/6));
-    for(let i=0;i<vals.length;i+=step){
-      const x = padL + (W-padL-padR) * (i/(vals.length-1));
-      ctx.fillText("W"+i, x-10, H-18);
-    }
-
-    // title
-    const u = units==="imperial" ? "lb" : "kg";
-    ctx.fillText("Projected weight ("+u+")", padL, 14);
   }
 
   function renderTable(weightsKgByDay, units){
@@ -649,201 +698,506 @@
     }
   }
 
+  function drawChart(weightsKgByDay, units, goalLine){
+    const c = $("chart");
+    const ctx = c.getContext("2d");
+    const W = c.width, H = c.height;
+    ctx.clearRect(0,0,W,H);
+
+    // sample weekly points for clarity
+    const pts = [];
+    for(let i=0;i<weightsKgByDay.length;i+=7) pts.push(weightsKgByDay[i]);
+    if(pts[pts.length-1] !== weightsKgByDay[weightsKgByDay.length-1]) pts.push(weightsKgByDay[weightsKgByDay.length-1]);
+
+    const padL=54, padR=18, padT=18, padB=44;
+
+    const vals = pts.map(kg => units==="imperial" ? kgToLb(kg) : kg);
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const span = Math.max(1e-9, max - min);
+    const yMin = min - span*0.12;
+    const yMax = max + span*0.12;
+
+    // grid
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(9,72,71,.10)";
+    ctx.fillStyle = "rgba(11,31,30,.55)";
+    ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial";
+
+    const ticks = 5;
+    for(let i=0;i<=ticks;i++){
+      const t=i/ticks;
+      const y = padT + (H-padT-padB)*(1-t);
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W-padR, y); ctx.stroke();
+
+      const val = yMin + (yMax-yMin)*t;
+      const label = round(val, units==="imperial" ? 0 : 1);
+      ctx.fillText(String(label), 10, y+4);
+    }
+
+    // goal line
+    if(goalLine != null){
+      const gy = padT + (H-padT-padB)*(1 - ((goalLine-yMin)/(yMax-yMin)));
+      ctx.setLineDash([6,6]);
+      ctx.strokeStyle = "rgba(34,197,94,.65)";
+      ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(W-padR, gy); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "rgba(34,197,94,.85)";
+      ctx.fillText("Goal", padL+6, gy-6);
+    }
+
+    // line gradient
+    const grad = ctx.createLinearGradient(padL, padT, W-padR, H-padB);
+    grad.addColorStop(0, "rgba(14,165,164,.95)");
+    grad.addColorStop(1, "rgba(34,197,94,.95)");
+
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = grad;
+    ctx.beginPath();
+    for(let i=0;i<vals.length;i++){
+      const x = padL + (W-padL-padR) * (i/(vals.length-1));
+      const y = padT + (H-padT-padB) * (1 - ((vals[i]-yMin)/(yMax-yMin)));
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(14,165,164,.95)";
+    for(let i=0;i<vals.length;i++){
+      const x = padL + (W-padL-padR) * (i/(vals.length-1));
+      const y = padT + (H-padT-padB) * (1 - ((vals[i]-yMin)/(yMax-yMin)));
+      ctx.beginPath(); ctx.arc(x,y,3.6,0,Math.PI*2); ctx.fill();
+    }
+
+    // x labels
+    ctx.fillStyle = "rgba(11,31,30,.55)";
+    const step = Math.max(1, Math.round((vals.length-1)/6));
+    for(let i=0;i<vals.length;i+=step){
+      const x = padL + (W-padL-padR) * (i/(vals.length-1));
+      ctx.fillText("W"+i, x-10, H-18);
+    }
+
+    const u = units==="imperial" ? "lb" : "kg";
+    ctx.fillText("Projected weight ("+u+")", padL, 14);
+  }
+
+  // ---------- Checkpoints ----------
+  function computeCheckpoints({units, startKg, goalKg}){
+    // milestones every 5 lb or 2.5 kg, descending
+    const start = units==="imperial" ? kgToLb(startKg) : startKg;
+    const goal  = units==="imperial" ? kgToLb(goalKg) : goalKg;
+    const step = units==="imperial" ? 5 : 2.5;
+
+    if(goal >= start) return {next:null, list:[]};
+
+    const list = [];
+    let cur = Math.floor(start/step)*step;
+    // ensure start included-ish
+    while(cur > goal){
+      list.push(cur);
+      cur -= step;
+    }
+    list.push(goal);
+    return {next: list.find(x => x < start) ?? null, list};
+  }
+
+  function updateCheckpointBox({units, startKg, goalKg, weightsKgByDay}){
+    const box = $("checkpointBox");
+
+    if(!goalKg || goalKg >= startKg){
+      box.style.display = "none";
+      return;
+    }
+
+    const startVal = (units==="imperial") ? kgToLb(startKg) : startKg;
+    const goalVal  = (units==="imperial") ? kgToLb(goalKg) : goalKg;
+    const unitLabel = (units==="imperial") ? "lb" : "kg";
+
+    const cps = computeCheckpoints({units, startKg, goalKg});
+    const next = cps.next;
+
+    // find day index of reaching goal (if within horizon)
+    let dayHit = null;
+    for(let i=0;i<weightsKgByDay.length;i++){
+      if(weightsKgByDay[i] <= goalKg){ dayHit = i; break; }
+    }
+
+    const endKg = weightsKgByDay[weightsKgByDay.length-1];
+    const endVal = (units==="imperial") ? kgToLb(endKg) : endKg;
+
+    let msg = `<div style="font-weight:900;">Milestones</div>`;
+    msg += `<div class="tiny">Start <b>${round(startVal,1)} ${unitLabel}</b> → Goal <b>${round(goalVal,1)} ${unitLabel}</b>. Projected end <b>${round(endVal,1)} ${unitLabel}</b>.</div>`;
+
+    if(next != null){
+      msg += `<div class="tiny" style="margin-top:8px;">Next checkpoint: <b>${round(next,1)} ${unitLabel}</b></div>`;
+    }
+
+    if(dayHit != null){
+      msg += `<div class="tiny" style="margin-top:6px;">Goal reached in projection: ~<b>${dayHit}</b> days.</div>`;
+    } else {
+      msg += `<div class="tiny" style="margin-top:6px;">Goal not reached within current horizon—extend the horizon or increase deficit.</div>`;
+    }
+
+    box.innerHTML = msg;
+    box.style.display = "";
+  }
+
+  // ---------- Logs ----------
+  function getCurrentDisplayWeight(units, kg){
+    return units === "imperial" ? kgToLb(kg) : kg;
+  }
+
+  function loadLogs(){
+    const s = loadStore();
+    return Array.isArray(s.logs) ? s.logs : [];
+  }
+  function saveLogs(logs){
+    const s = loadStore();
+    s.logs = logs;
+    saveStore(s);
+  }
+
+  function renderLogs(){
+    const logs = loadLogs();
+    const box = $("logsView");
+    if(!logs.length){
+      box.textContent = "No logs yet.";
+      return;
+    }
+    // show last 10
+    const last = logs.slice(-10).reverse();
+    box.innerHTML = last.map(l => `• <b>${l.date}</b> — ${l.weight} ${l.unit}`).join("<br>");
+  }
+
+  function addTodayLog({units, weightVal}){
+    const logs = loadLogs();
+    const date = todayISO();
+    const unit = units==="imperial" ? "lb" : "kg";
+    const entry = {date, weight: round(weightVal,1), unit};
+
+    // replace if same date exists
+    const idx = logs.findIndex(x => x.date === date && x.unit === unit);
+    if(idx >= 0) logs[idx] = entry;
+    else logs.push(entry);
+
+    saveLogs(logs);
+    renderLogs();
+  }
+
+  // ---------- Diet checklist ----------
+  const DIET_PRESETS = {
+    none: [],
+    lowfodmap: [
+      {id:"lf1", title:"2–6 week strict phase", meta:"Then reintroduce one group at a time."},
+      {id:"lf2", title:"Avoid high FODMAP triggers", meta:"Common: onion/garlic, wheat in large amounts, certain legumes, some fruits."},
+      {id:"lf3", title:"Choose simple proteins", meta:"Chicken, fish, eggs; watch sauces."},
+      {id:"lf4", title:"Low FODMAP carbs", meta:"Rice, oats, potatoes; portion matters."},
+      {id:"lf5", title:"Track symptoms + reintroductions", meta:"One change at a time."},
+      {id:"lf6", title:"Consider dietitian guidance", meta:"Especially if symptoms persist."}
+    ],
+    diabetes: [
+      {id:"db1", title:"Prioritize protein + fiber per meal", meta:"Helps blunt glucose spikes."},
+      {id:"db2", title:"Carb consistency", meta:"Similar carbs each day if possible."},
+      {id:"db3", title:"Choose low-glycemic carbs", meta:"Beans, oats, whole grains; portions matter."},
+      {id:"db4", title:"Limit sugary drinks", meta:"Swap for water / diet options."},
+      {id:"db5", title:"Walk 10–20 min after meals", meta:"Often improves post-meal glucose."},
+      {id:"db6", title:"Have a hypo plan (if on meds)", meta:"Discuss with clinician."}
+    ],
+    heart: [
+      {id:"ht1", title:"Aim for mostly unsaturated fats", meta:"Olive oil, nuts, fatty fish (as tolerated)."},
+      {id:"ht2", title:"Limit ultra-processed foods", meta:"Sodium + added sugars add up."},
+      {id:"ht3", title:"Fiber target", meta:"25–38g/day (build gradually)."},
+      {id:"ht4", title:"Veg/fruit daily", meta:"Whatever you tolerate consistently."},
+      {id:"ht5", title:"Protein balance", meta:"Lean proteins; watch fried foods."},
+      {id:"ht6", title:"Sleep + stress basics", meta:"Cardio + resting HR improve with recovery."}
+    ]
+  };
+
+  const DIET_KEY = "bp_diet_v1";
+  function loadDietState(){
+    try{ return JSON.parse(localStorage.getItem(DIET_KEY) || "{}"); }catch(e){ return {}; }
+  }
+  function saveDietState(state){
+    localStorage.setItem(DIET_KEY, JSON.stringify(state));
+  }
+
+  function renderDietChecklist(){
+    const preset = $("dietPreset").value;
+    const show = $("dietShow").value === "yes";
+    const wrap = $("dietChecklist");
+    wrap.innerHTML = "";
+    wrap.style.display = show ? "" : "none";
+    if(!show) return;
+
+    const items = DIET_PRESETS[preset] || [];
+    const state = loadDietState();
+    state[preset] = state[preset] || {};
+    saveDietState(state);
+
+    for(const it of items){
+      const div = document.createElement("div");
+      div.className = "checkItem";
+      const checked = !!(state[preset] && state[preset][it.id]);
+
+      div.innerHTML = `
+        <input type="checkbox" ${checked ? "checked":""} data-id="${it.id}" />
+        <div>
+          <div style="font-weight:900;">${it.title}</div>
+          <div class="meta">${it.meta || ""}</div>
+        </div>
+      `;
+      wrap.appendChild(div);
+    }
+
+    wrap.querySelectorAll("input[type=checkbox]").forEach(cb => {
+      cb.addEventListener("change", () => {
+        const id = cb.getAttribute("data-id");
+        const st = loadDietState();
+        st[preset] = st[preset] || {};
+        st[preset][id] = cb.checked;
+        saveDietState(st);
+      });
+    });
+  }
+
+  // ---------- Share ----------
+  function shareSummary(text){
+    if(navigator.share){
+      navigator.share({ title: "Body Projection", text }).catch(()=>{});
+      return;
+    }
+    // fallback copy
+    navigator.clipboard?.writeText(text).then(()=>{
+      alert("Copied summary to clipboard.");
+    }).catch(()=>{
+      alert(text);
+    });
+  }
+
+  // ---------- Main calculate ----------
   function calculate(){
     const x = getInputs();
     const errs = validate(x);
     if(errs.length){
       renderNotices([{type:"bad", msg: errs.join(" ")}]);
       $("heroMsg").textContent = "—";
+      $("checkpointBox").style.display = "none";
       return;
     }
 
     const bmr = mifflinStJeor({sex:x.sex, kg:x.kg, cm:x.cm, age:x.age});
     const tdee = bmr * x.activity;
 
-    // Compute base deficit depending on mode
+    // base deficit depending on mode
     let baseDef = x.deficit;
     let notices = [];
 
     if(x.mode === "calories"){
       baseDef = Math.max(0, tdee - x.intake);
       if(x.intake > tdee){
-        notices.push({type:"warn", msg:"Your intake is above estimated TDEE — projection will show gain/maintenance unless adherence changes. (We cap deficit at 0 here.)"});
+        notices.push({type:"warn", msg:"Your intake is above estimated TDEE—projection will show maintenance/gain unless activity changes. Deficit is capped at 0 here."});
       }
     }
 
-    // goal weight in kg
-    const goalKg = (x.mode==="date" || x.mode==="goaleta")
-      ? (x.units==="imperial" ? lbToKg(x.goalWeight) : x.goalWeight)
-      : null;
+    // goal weight to kg when relevant
+    let goalKg = null;
+    if(x.mode === "date" || x.mode === "goaleta"){
+      goalKg = (x.units==="imperial") ? lbToKg(x.goalWeight) : x.goalWeight;
+    }
 
-    // Mode: target date => compute required deficit and override horizon
+    // Target Date mode: compute required daily deficit to hit goal by date + set horizon
     let horizonDays = x.days;
     if(x.mode === "date"){
       const now = new Date();
       const gd = new Date(x.goalDate + "T00:00:00");
       const diffMs = gd - now;
       const daysToGoal = Math.max(1, Math.ceil(diffMs / (1000*60*60*24)));
-      horizonDays = Math.min(365, Math.max(7, daysToGoal));
+      horizonDays = clamp(daysToGoal, 7, 365);
 
       const diffKg = x.kg - goalKg;
       if(diffKg <= 0){
         baseDef = 0;
-        notices.push({type:"warn", msg:"Your goal weight is at/above your current weight. Required deficit is 0 (maintenance)."});
+        notices.push({type:"warn", msg:"Your goal is at/above your current weight. Required deficit is 0 (maintenance)."});
       } else {
         const diffLb = kgToLb(diffKg);
         const totalKcal = diffLb * x.kcalPerLb;
+        // IMPORTANT: this is the planned deficit; adherence is applied later
         baseDef = totalKcal / daysToGoal;
       }
       notices.push({type:"warn", msg:`Target Date mode: horizon set to ${horizonDays} days to match your goal date.`});
     }
 
-    const effDef = baseDef * x.adherence;
+    // Apply adherence + maintenance days schedule inside the daily model
+    const weightsKgByDay = projectDailyWeightsKg({
+      startKg: x.kg,
+      baseDef,
+      adherence: x.adherence,
+      days: horizonDays,
+      adapt: x.adapt,
+      kcalPerLb: x.kcalPerLb,
+      maintDays: x.maintDays,
+      maintPattern: x.maintPattern
+    });
 
-    // Expected rate
-    const rateLbPerWeek = (effDef * 7) / x.kcalPerLb;
+    // compute effective average deficit (rough) for display:
+    // average kg drop per day -> kcal/day equivalent
+    const startKg = weightsKgByDay[0];
+    const endKg = weightsKgByDay[weightsKgByDay.length-1];
+    const totalLossKg = startKg - endKg;
+    const totalLossLb = kgToLb(totalLossKg);
+    const totalKcal = totalLossLb * x.kcalPerLb;
+    const effAvgDef = totalKcal / horizonDays;
+
+    const rateLbPerWeek = (effAvgDef * 7) / x.kcalPerLb;
     const rateKgPerWeek = lbToKg(rateLbPerWeek);
 
-    // Safety / guidance
-    const targetCalories = tdee - baseDef;
-    const rateLbForWarn = rateLbPerWeek;
-
-    if(effDef === 0){
-      notices.push({type:"warn", msg:"Effective deficit is 0 — projection will be flat (maintenance)."});
-    }
-    if(targetCalories < 1200){
-      notices.push({type:"bad", msg:"Projected intake is below ~1200 kcal/day (based on estimated TDEE and your deficit). That’s often too aggressive for many people."});
-    } else if(targetCalories < 1500){
-      notices.push({type:"warn", msg:"Projected intake is quite low. If energy/sleep/training dips, reduce the deficit."});
-    }
-    if(rateLbForWarn > 2.5){
-      notices.push({type:"bad", msg:"Projected loss rate is > ~2.5 lb/week. That’s very aggressive and often not sustainable."});
-    } else if(rateLbForWarn > 2.0){
-      notices.push({type:"warn", msg:"Projected loss rate is > ~2 lb/week. Aggressive—watch recovery and adherence."});
-    }
-    if(baseDef > tdee * 0.35){
-      notices.push({type:"warn", msg:"Your deficit is > 35% of maintenance. Many people struggle to stick to this long-term."});
-    }
-    notices.push({type:"warn", msg:"Reality check: water/glycogen can mask fat loss week-to-week. Use the trend."});
-
-    // Goal ETA mode: compute ETA to goal weight using effective deficit
-    if(x.mode === "goaleta"){
-      if(goalKg != null){
-        const diffKg = x.kg - goalKg;
-        if(diffKg <= 0){
-          notices.unshift({type:"warn", msg:"You’re already at or below your goal weight based on current input."});
-        } else if(effDef <= 0){
-          notices.unshift({type:"bad", msg:"With an effective deficit of 0, there’s no projected path to the goal."});
-        } else {
-          const diffLb = kgToLb(diffKg);
-          const daysNeeded = Math.ceil((diffLb * x.kcalPerLb) / effDef);
-          const eta = new Date();
-          eta.setDate(eta.getDate() + daysNeeded);
-          const etaStr = eta.toISOString().slice(0,10);
-          notices.unshift({type:"warn", msg:`Goal ETA: ~${daysNeeded} days (around ${etaStr}) at your current effective deficit.`});
-        }
-      }
-    }
-
-    // Update outputs
     $("bmr").textContent  = String(Math.round(bmr));
     $("tdee").textContent = String(Math.round(tdee));
-    $("effDef").textContent = String(Math.round(effDef));
+    $("effDef").textContent = String(Math.round(effAvgDef));
     $("rate").textContent = (x.units==="imperial")
       ? `${round(rateLbPerWeek, 2)} lb/wk`
       : `${round(rateKgPerWeek, 2)} kg/wk`;
 
-    // Hero message: projected end weight over horizon
-    const weightsKgByDay = projectDailyWeightsKg({
-      startKg: x.kg,
-      effDef: effDef,
-      days: horizonDays,
-      adapt: x.adapt,
-      kcalPerLb: x.kcalPerLb
-    });
-
-    const endKg = weightsKgByDay[weightsKgByDay.length-1];
+    // hero end weight
     const endVal = (x.units==="imperial") ? kgToLb(endKg) : endKg;
     const unitLabel = (x.units==="imperial") ? "lb" : "kg";
     $("heroMsg").textContent = `${round(endVal, 1)} ${unitLabel}`;
 
-    // goal line on chart if relevant
+    // goal line for chart
     let goalLine = null;
     if(goalKg != null){
-      goalLine = (x.units==="imperial") ? x.goalWeight : x.goalWeight; // already in display units
+      goalLine = (x.units==="imperial") ? x.goalWeight : x.goalWeight;
+    }
+
+    // warnings
+    const projectedIntake = tdee - baseDef;
+    if(projectedIntake < 1200){
+      notices.push({type:"bad", msg:"Projected intake is below ~1200 kcal/day (rough estimate). That’s often too aggressive for many people."});
+    } else if(projectedIntake < 1500){
+      notices.push({type:"warn", msg:"Projected intake is quite low. If energy/sleep/training dips, reduce deficit."});
+    }
+    if(rateLbPerWeek > 2.5){
+      notices.push({type:"bad", msg:"Projected loss rate > ~2.5 lb/week. Very aggressive and often not sustainable."});
+    } else if(rateLbPerWeek > 2.0){
+      notices.push({type:"warn", msg:"Projected loss rate > ~2 lb/week. Aggressive—monitor recovery."});
+    }
+    if(baseDef > tdee * 0.35){
+      notices.push({type:"warn", msg:"Deficit > 35% of maintenance. Many people struggle to adhere long-term."});
+    }
+    if(x.maintDays > 0){
+      notices.push({type:"warn", msg:`Maintenance days enabled: ${x.maintDays}/week (${x.maintPattern}). This improves sustainability but slows the weekly average.`});
+    }
+    notices.push({type:"warn", msg:"Reality check: water/glycogen can mask fat loss week-to-week. Focus on trend."});
+
+    // Goal ETA mode: estimate ETA from the projected curve
+    if(x.mode === "goaleta"){
+      if(goalKg != null){
+        if(x.kg <= goalKg){
+          notices.unshift({type:"warn", msg:"You’re already at or below your goal weight based on current input."});
+        } else {
+          let hitDay = null;
+          for(let i=0;i<weightsKgByDay.length;i++){
+            if(weightsKgByDay[i] <= goalKg){ hitDay = i; break; }
+          }
+          if(hitDay == null){
+            notices.unshift({type:"warn", msg:"Goal not reached within this horizon—extend horizon or increase deficit."});
+          } else {
+            const eta = new Date();
+            eta.setDate(eta.getDate() + hitDay);
+            notices.unshift({type:"warn", msg:`Goal ETA: ~${hitDay} days (around ${eta.toISOString().slice(0,10)}) using your plan + maintenance schedule.`});
+          }
+        }
+      }
     }
 
     renderNotices(notices);
     drawChart(weightsKgByDay, x.units, goalLine);
     renderTable(weightsKgByDay, x.units);
 
-    // Persist
-    localStorage.setItem("bp_inputs_v2", JSON.stringify({
+    // checkpoints (only when goal exists and is lower)
+    if(goalKg != null){
+      updateCheckpointBox({units:x.units, startKg:x.kg, goalKg, weightsKgByDay});
+    } else {
+      $("checkpointBox").style.display = "none";
+    }
+
+    // persist main settings
+    const s = loadStore();
+    s.inputs = {
       units:x.units, sex:x.sex, age:x.age, activity:x.activity, mode:x.mode,
-      days:x.days, adapt:x.adapt, kcalPerLb:x.kcalPerLb, adherence: $("adherence").value,
-      cm:x.cm, kg:x.kg, deficit:x.deficit, intake:x.intake, goalWeight:x.goalWeight, goalDate:x.goalDate
-    }));
+      days:x.days, adapt:x.adapt, kcalPerLb:x.kcalPerLb,
+      adherence: $("adherence").value,
+      maintDays: $("maintDays").value,
+      maintPattern: $("maintPattern").value,
+      cm:x.cm, kg:x.kg,
+      deficit:x.deficit, intake:x.intake,
+      goalWeight:x.goalWeight, goalDate:x.goalDate
+    };
+    saveStore(s);
   }
 
   function resetAll(){
-    localStorage.removeItem("bp_inputs_v2");
+    localStorage.removeItem(STORE_KEY);
+    // keep diet checklist state separate
     location.reload();
   }
 
   function loadSaved(){
-    const raw = localStorage.getItem("bp_inputs_v2");
-    if(!raw) return;
-    try{
-      const s = JSON.parse(raw);
-      $("units").value = s.units ?? "imperial";
-      setUnitUI();
+    const s = loadStore();
+    if(!s.inputs) return;
 
-      $("sex").value = s.sex ?? "male";
-      $("age").value = s.age ?? 33;
-      $("activity").value = String(s.activity ?? 1.55);
-      $("mode").value = s.mode ?? "deficit";
-      setModeUI();
+    const i = s.inputs;
 
-      $("days").value = s.days ?? 56;
-      setHorizonLabels();
+    $("units").value = i.units ?? "imperial";
+    setUnitUI();
 
-      $("adapt").value = String(s.adapt ?? 0);
-      $("kcalPerLb").value = String(s.kcalPerLb ?? 3500);
-      $("adherence").value = s.adherence ?? 100;
-      setAdhLabel();
+    $("sex").value = i.sex ?? "male";
+    $("age").value = i.age ?? 33;
+    $("activity").value = String(i.activity ?? 1.55);
 
-      $("deficit").value = s.deficit ?? 500;
-      $("intake").value = s.intake ?? 2000;
-      $("goalWeight").value = s.goalWeight ?? 160;
+    $("mode").value = i.mode ?? "deficit";
+    setModeUI();
 
-      $("goalDate").value = s.goalDate ?? "";
-      if(!$("goalDate").value){
-        // default: 8 weeks from today
-        const d = new Date();
-        d.setDate(d.getDate()+56);
-        $("goalDate").value = d.toISOString().slice(0,10);
-      }
+    $("days").value = i.days ?? 56;
+    setHorizonLabels();
 
-      if($("units").value === "metric"){
-        $("cm").value = round(s.cm ?? 175, 0);
-        $("kg").value = round(s.kg ?? 76.7, 1);
-      } else {
-        const totalIn = cmToIn(s.cm ?? 175);
-        const ft = Math.floor(totalIn/12);
-        const inch = Math.round(totalIn - ft*12);
-        $("ft").value = ft;
-        $("inch").value = Math.min(11, Math.max(0, inch));
-        $("lb").value = round(kgToLb(s.kg ?? 76.7), 1);
-      }
-    } catch(e){}
+    $("adapt").value = String(i.adapt ?? 0);
+    $("kcalPerLb").value = String(i.kcalPerLb ?? 3500);
+
+    $("adherence").value = i.adherence ?? 100;
+    setAdhLabel();
+
+    $("maintDays").value = i.maintDays ?? "0";
+    $("maintPattern").value = i.maintPattern ?? "weekend";
+
+    $("deficit").value = i.deficit ?? 500;
+    $("intake").value = i.intake ?? 2000;
+
+    $("goalWeight").value = i.goalWeight ?? 160;
+    $("goalDate").value = i.goalDate ?? "";
+
+    if(!$("goalDate").value){
+      const d = new Date();
+      d.setDate(d.getDate()+56);
+      $("goalDate").value = d.toISOString().slice(0,10);
+    }
+
+    if($("units").value === "metric"){
+      $("cm").value = round(i.cm ?? 175, 0);
+      $("kg").value = round(i.kg ?? 76.7, 1);
+    } else {
+      const totalIn = cmToIn(i.cm ?? 175);
+      const ft = Math.floor(totalIn/12);
+      const inch = Math.round(totalIn - ft*12);
+      $("ft").value = ft;
+      $("inch").value = Math.min(11, Math.max(0, inch));
+      $("lb").value = round(kgToLb(i.kg ?? 76.7), 1);
+    }
   }
 
-  // events
+  // ---------- Events ----------
   $("mode").addEventListener("change", () => { setModeUI(); calculate(); });
 
   $("units").addEventListener("change", () => {
     setUnitUI();
-    // convert current values to avoid losing data when switching
     const u = $("units").value;
     if(u === "metric"){
       const ft = Number($("ft").value);
@@ -851,6 +1205,8 @@
       const lb = Number($("lb").value);
       $("cm").value = round(inToCm(ft*12 + inch), 0);
       $("kg").value = round(lbToKg(lb), 1);
+      // convert goal weight too if visible
+      if($("goalWeight").value) $("goalWeight").value = round(lbToKg(Number($("goalWeight").value)), 1);
     } else {
       const cm = Number($("cm").value);
       const kg = Number($("kg").value);
@@ -860,6 +1216,7 @@
       $("ft").value = ft;
       $("inch").value = Math.min(11, Math.max(0, inch));
       $("lb").value = round(kgToLb(kg), 1);
+      if($("goalWeight").value) $("goalWeight").value = round(kgToLb(Number($("goalWeight").value)), 1);
     }
     calculate();
   });
@@ -875,15 +1232,47 @@
 
   $("adherence").addEventListener("input", () => { setAdhLabel(); calculate(); });
 
-  ["sex","age","activity","adapt","kcalPerLb","ft","inch","lb","cm","kg","deficit","intake","goalWeight","goalDate"]
+  ["sex","age","activity","adapt","kcalPerLb","ft","inch","lb","cm","kg","deficit","intake","goalWeight","goalDate","maintDays","maintPattern"]
     .forEach(id => $(id).addEventListener("input", () => calculate()));
 
   $("calc").addEventListener("click", calculate);
   $("reset").addEventListener("click", resetAll);
 
-  // defaults
+  $("logToday").addEventListener("click", () => {
+    const x = getInputs();
+    const w = getCurrentDisplayWeight(x.units, x.kg);
+    addTodayLog({units:x.units, weightVal:w});
+    alert("Logged today ✅");
+  });
+
+  $("clearLogs").addEventListener("click", () => {
+    if(confirm("Clear all logs?")){ saveLogs([]); renderLogs(); }
+  });
+
+  $("share").addEventListener("click", () => {
+    const x = getInputs();
+    const u = x.units==="imperial" ? "lb" : "kg";
+    const end = $("heroMsg").textContent;
+    const text =
+`Body Projection
+Mode: ${$("heroMode").textContent}
+Horizon: ${$("heroHorizon").textContent}
+Adherence: ${$("heroAdh").textContent}
+BMR: ${$("bmr").textContent} kcal/day
+TDEE: ${$("tdee").textContent} kcal/day
+Effective deficit: ${$("effDef").textContent} kcal/day
+Rate: ${$("rate").textContent}
+Projected end: ${end}
+(Estimates only)`;
+    shareSummary(text);
+  });
+
+  // diet
+  $("dietPreset").addEventListener("change", renderDietChecklist);
+  $("dietShow").addEventListener("change", renderDietChecklist);
+
+  // ---------- Init ----------
   if(!$("goalDate").value){
-    $("goalDate").value = todayISO();
     const d = new Date();
     d.setDate(d.getDate()+56);
     $("goalDate").value = d.toISOString().slice(0,10);
@@ -894,6 +1283,9 @@
   setModeUI();
   setHorizonLabels();
   setAdhLabel();
+
+  renderLogs();
+  renderDietChecklist();
   calculate();
 })();
 </script>
