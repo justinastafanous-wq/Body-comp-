@@ -1,5 +1,5 @@
 const CACHE = "calcurve-v1";
-const ASSETS = [
+const ASSETS = "./4259E36F-E299-4BE9-ADB4-5F0A78473B78.png",
   "./",
   "./index.html",
   "./manifest.webmanifest"
